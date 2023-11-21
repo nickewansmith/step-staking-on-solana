@@ -1,5 +1,5 @@
 {
-  "name": "antd-demo",
+  "name": "step-finance-coding-task",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,16 +9,26 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ant-design/cssinjs": "1.17.2",
+    "@project-serum/anchor": "^0.26.0",
+    "@solana/spl-token": "^0.3.9",
+    "@solana/wallet-adapter-ant-design": "^0.11.31",
+    "@solana/wallet-adapter-base": "^0.9.23",
+    "@solana/wallet-adapter-react": "^0.15.35",
+    "@solana/wallet-adapter-wallets": "^0.19.23",
+    "@solana/web3.js": "^1.87.6",
+    "antd": "^5.11.2",
+    "axios": "^1.6.2",
+    "next": "14.0.3",
     "react": "^18",
-    "react-dom": "^18",
-    "next": "14.0.3"
+    "react-dom": "^18"
   },
   "devDependencies": {
-    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
-    "eslint-config-next": "14.0.3"
+    "eslint-config-next": "14.0.3",
+    "typescript": "^5"
   }
 }

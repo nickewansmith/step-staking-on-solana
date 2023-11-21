@@ -1,0 +1,33 @@
+.stakeStep {
+  margin: 15px auto auto;
+  width: 450px;
+  maxWidth: 450px;
+  padding: 15px
+}
+.stakeStepInfo {
+  display: flex;
+  justify-content: space-between;
+}
+.stakeStepSeparator {
+  text-align: center;
+  margin: 10px 0 5px 0;
+}
+.stakeStepSubmit {
+  margin: 10px 0;
+}
+.stakeStepInput input {
+  padding-right: 10px;
+  text-align: right;
+}
+.stakeStepInputPrefix img {
+  borderRadius: 10rem;
+  backgroundColor: transparent;
+  backgroundClip: 'padding-box';
+  marginRight: 0;
+  width: 28px;
+  height: 28px;
+}
+.stakeStepInputPrefix span {
+  font-weight: bold;
+  margin-left: 7px;
+}
