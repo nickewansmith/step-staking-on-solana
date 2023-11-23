@@ -15,9 +15,12 @@
 .stakeStepSubmit {
   margin: 10px 0;
 }
-.stakeStepInput input {
-  padding-right: 10px;
-  text-align: right;
+.stakeStepInput {
+  text-indent: -30px;
+  width: 100%;
+}
+.stakeStepInputPrefix {
+  text-indent: 0px;
 }
 .stakeStepInputPrefix img {
   borderRadius: 10rem;

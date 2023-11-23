@@ -1,8 +1,8 @@
 "use client";
 
 import * as anchor from '@project-serum/anchor';
-import React, { ChangeEvent, FC, useEffect, useState } from 'react';
-import { Button, Col, Input, Row, Tabs } from 'antd';
+import React, { FC, useEffect, useState } from 'react';
+import { Button, Col, InputNumber, Row, Tabs } from 'antd';
 import { ArrowDownOutlined } from '@ant-design/icons';
 import { TOKEN_PROGRAM_ID, ACCOUNT_SIZE, getMinimumBalanceForRentExemptAccount, createInitializeAccountInstruction, getOrCreateAssociatedTokenAccount } from '@solana/spl-token';
 import styles from './StakeStep.module.css';
@@ -12,6 +12,7 @@ import idl from '../idls/stepStaking.json';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { notify } from '../services/NotificationService';
 import axios from 'axios';
+import { CSSObject, StyleProvider } from '@ant-design/cssinjs';
 
 const STAKE_STEP_PROGRAM_ID = 'Stk5NCWomVN3itaFjLu382u9ibb5jMSHEsh6CuhaGjB';
 
@@ -50,28 +51,47 @@ enum TabType {
   Stake = 'Stake',
   Unstake = 'Unstake'
 }
+
 interface TabFormData {
   amountSTEP: string
   amountXSTEP: string;
   type: TabType;
 }
+
 interface TabProps {
-  type: TabType
-  onFormSubmit: (data: { amountSTEP: string, amountXSTEP: string, type: TabType }) => void
-  stepTokenBalance: number | null
-  xStepTokenBalance: number | null,
-  usdStep: number | null,
-  stepXStep: string | null
+  type: TabType;
+  onFormSubmit: (data: { amountSTEP: string, amountXSTEP: string, type: TabType }) => void;
+  stepTokenBalance: number | null;
+  xStepTokenBalance: number | null;
+  usdStep: number | null;
+  usdXStep: number | null;
+  stepXStep: string | null;
 }
 
 // Inner Tab Component
-const Tab: FC<TabProps> = ({ type, stepTokenBalance, xStepTokenBalance, usdStep, stepXStep, onFormSubmit }) => {
+const Tab: FC<TabProps> = ({ type, stepTokenBalance, xStepTokenBalance, usdStep, usdXStep, stepXStep, onFormSubmit }) => {
   const [amountSTEP, setAmountSTEP] = useState<string | undefined>();
   const [amountXSTEP, setAmountXSTEP] = useState<string | undefined>();
   const [submitButtonText, setSubmitButtonText] = useState<string>(SubmitButtonText.DEFAULT);
 
+  const MAX_STEP_TOKEN_AMOUNT = '1000000000';
+  const MAX_XSTEP_TOKEN_AMOUNT = String(Number('1000000000') / Number(stepXStep));
+
   let stakeStepInfoSTEP = YOU_STAKE_TOKEN_TEXT;
   let stakeStepInfoXSTEP = YOU_RECEIVE_TOKEN_TEXT;
+
+  const antInputNumberTransformer = {
+    visit: (cssObj: CSSObject) => {
+      const keyToUpdate = 'textAlign';
+      if (cssObj['textAlign']) {
+        cssObj['textAlign'] = 'right';
+      }
+      if (cssObj['padding']) {
+        cssObj['padding'] = '4px 0 4px 42px';
+      }
+      return cssObj;
+    }
+  };
 
   const handleClick = () => {
     if (amountSTEP && amountXSTEP) {
@@ -83,7 +103,8 @@ const Tab: FC<TabProps> = ({ type, stepTokenBalance, xStepTokenBalance, usdStep,
       return;
     }
   };
-  const sanitizeInput = (input: string | undefined) => {
+
+  const sanitizeInput = (input: string | null) => {
     if (!input) {
       return;
     }
@@ -107,11 +128,12 @@ const Tab: FC<TabProps> = ({ type, stepTokenBalance, xStepTokenBalance, usdStep,
       if (splitInput[1] && splitInput[1].length > 9) {
         input = splitInput[0] + '.' + splitInput[1].slice(0, 9);
       }
-      if (input.length > 25) {
+      if (Number(input) > Number(MAX_STEP_TOKEN_AMOUNT)) {
+        setAmountSTEP(MAX_STEP_TOKEN_AMOUNT);
         return;
       }
       setAmountSTEP(input);
-      setAmountXSTEP(String(roundToNDecimals(Number(input) / (Number(stepXStep)), 9) || 0));
+      setAmountXSTEP(parseFloat(String(roundToNDecimals(Number(input) / (Number(stepXStep)), 9) || 0)).toString());
     } else if (tokenSymbol == TOKEN_SYMBOL.XSTEP) {
       if (!input) {
         setAmountSTEP(undefined);
@@ -122,11 +144,12 @@ const Tab: FC<TabProps> = ({ type, stepTokenBalance, xStepTokenBalance, usdStep,
       if (splitInput[1] && splitInput[1].length > 9) {
         input = splitInput[0] + '.' + splitInput[1].slice(0, 9);
       }
-      if (input.length > 25) {
+      if (Number(input) > Number(MAX_XSTEP_TOKEN_AMOUNT)) {
+        setAmountXSTEP(MAX_XSTEP_TOKEN_AMOUNT);
         return;
       }
       setAmountXSTEP(input);
-      setAmountSTEP(String(roundToNDecimals(Number(input) * (Number(stepXStep)), 9) || 0));
+      setAmountSTEP(parseFloat(String(roundToNDecimals(Number(input) * (Number(stepXStep)), 9) || 0)).toString());
     }
   };
 
@@ -161,17 +184,17 @@ const Tab: FC<TabProps> = ({ type, stepTokenBalance, xStepTokenBalance, usdStep,
     }
   };
 
-  const handleInputChangeSTEP = (event: ChangeEvent<HTMLInputElement>) => {
-    const input = sanitizeInput(event.target.value);
+  const handleInputChangeSTEP = (value: string | null) => {
+    const input = sanitizeInput(value);
     validateAndUpdateInput(input, TOKEN_SYMBOL.STEP);
   };
-  const handleInputChangeXSTEP = (event: ChangeEvent<HTMLInputElement>) => {
-    const input = sanitizeInput(event.target.value);
+  const handleInputChangeXSTEP = (value: string | null) => {
+    const input = sanitizeInput(value);
     validateAndUpdateInput(input, TOKEN_SYMBOL.XSTEP);
   };
   const roundToNDecimals = (num: number, n: number) => {
-    var factor = Math.pow(10, n);
-    return Math.round(num * factor) / factor;
+    const factor = Math.pow(10, n);
+    return Math.floor(num * factor) / factor;
   };
 
   if (type === TabType.Unstake) {
@@ -186,15 +209,22 @@ const Tab: FC<TabProps> = ({ type, stepTokenBalance, xStepTokenBalance, usdStep,
         <div>Balance {stepTokenBalance || 0}</div>
       </div>
       <div>
-        <Input
-          onChange={handleInputChangeSTEP}
-          className={styles.stakeStepInput}
-          size="large"
-          placeholder="0.00"
-          autoComplete='off'
-          value={amountSTEP}
-          prefix={<InputPrefix iconUrl={stepIconUrl} tokenText={TOKEN_SYMBOL.STEP} />}
-        />
+        <StyleProvider transformers={[antInputNumberTransformer]}>
+          <InputNumber<string>
+            onWheel={event => event.currentTarget.blur()}
+            onChange={handleInputChangeSTEP}
+            min="0"
+            type='number'
+            max={MAX_STEP_TOKEN_AMOUNT}
+            className={styles.stakeStepInput}
+            size="large"
+            placeholder="0.00"
+            autoComplete='off'
+            value={amountSTEP}
+            prefix={<InputPrefix iconUrl={stepIconUrl} tokenText={TOKEN_SYMBOL.STEP} />}
+            stringMode
+          />
+        </StyleProvider>
         <span>USD ${(roundToNDecimals((usdStep || 0) * Number(amountSTEP), 2) || 0)}</span>
       </div>
     </div>,
@@ -207,16 +237,23 @@ const Tab: FC<TabProps> = ({ type, stepTokenBalance, xStepTokenBalance, usdStep,
         <div>Balance {xStepTokenBalance || 0}</div>
       </div>
       <div>
-        <Input
-          onChange={handleInputChangeXSTEP}
-          className={styles.stakeStepInput}
-          size="large"
-          placeholder="0.00"
-          autoComplete='off'
-          value={amountXSTEP}
-          prefix={<InputPrefix iconUrl={xStepIconUrl} tokenText={TOKEN_SYMBOL.XSTEP} />}
-        />
-        <span>USD ${((roundToNDecimals((Number(amountXSTEP) * (Number(stepXStep) || 0)) * (Number(usdStep)), 2) || 0))}</span>
+        <StyleProvider transformers={[antInputNumberTransformer]}>
+          <InputNumber<string>
+            onWheel={event => event.currentTarget.blur()}
+            onChange={handleInputChangeXSTEP}
+            min="0"
+            type='number'
+            max={MAX_XSTEP_TOKEN_AMOUNT}
+            className={styles.stakeStepInput}
+            size="large"
+            placeholder="0.00"
+            autoComplete='off'
+            value={amountXSTEP}
+            prefix={<InputPrefix iconUrl={xStepIconUrl} tokenText={TOKEN_SYMBOL.XSTEP} />}
+            stringMode
+          />
+        </StyleProvider>
+        <span>USD ${(roundToNDecimals((usdXStep || 0) * Number(amountXSTEP), 2) || 0)}</span>
       </div>
     </div>
   ];
@@ -245,6 +282,7 @@ export const StakeStep: FC = () => {
   const [userTokenAccountSTEP, setUserTokenAccountSTEP] = useState<PublicKey>();
   const [userTokenAccountXSTEP, setUserTokenAccountXSTEP] = useState<PublicKey>();
   const [usdStepPrice, setUsdStepPrice] = useState<number | null>(null);
+  const [usdXStepPrice, setUsdXStepPrice] = useState<number | null>(null);
   const [stepXStepPrice, setStepXStepPrice] = useState<string | null>(null);
   const [program, setProgram] = useState<anchor.Program | null>(null);
 
@@ -456,9 +494,15 @@ export const StakeStep: FC = () => {
       }
     }
 
-    const response = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=step-finance&vs_currencies=usd');
-    const usdPriceInfo = response.data?.['step-finance']?.usd;
-    setUsdStepPrice(usdPriceInfo);
+    const tokenMintAddressStepString = TOKEN_MINT_ADDRESS_STEP.toString();
+    const tokenMintAddressXStepString = TOKEN_MINT_ADDRESS_XSTEP.toString();
+
+    const response = await axios.get(`https://api.geckoterminal.com/api/v2/simple/networks/solana/token_price/${tokenMintAddressStepString}%2C${tokenMintAddressXStepString}`);
+    const usdPriceInfoStep = response.data?.data?.attributes?.token_prices?.[tokenMintAddressStepString];
+    const usdPriceInfoXStep = response.data?.data?.attributes?.token_prices?.[tokenMintAddressXStepString];
+
+    setUsdStepPrice(parseFloat(usdPriceInfoStep));
+    setUsdXStepPrice(parseFloat(usdPriceInfoXStep));
 
     if (userTokenAccountSTEP) {
       const response = await connection.getTokenAccountBalance(userTokenAccountSTEP);
@@ -534,12 +578,12 @@ export const StakeStep: FC = () => {
     {
       label: TabType.Stake,
       key: '1',
-      children: <Tab type={TabType.Stake} stepTokenBalance={tokenAccountBalanceSTEP} xStepTokenBalance={tokenAccountBalanceXSTEP} usdStep={usdStepPrice} stepXStep={stepXStepPrice} onFormSubmit={handleFormSubmit} />
+      children: <Tab type={TabType.Stake} stepTokenBalance={tokenAccountBalanceSTEP} xStepTokenBalance={tokenAccountBalanceXSTEP} usdStep={usdStepPrice} usdXStep={usdXStepPrice} stepXStep={stepXStepPrice} onFormSubmit={handleFormSubmit} />
     },
     {
       label: TabType.Unstake,
       key: '2',
-      children: <Tab type={TabType.Unstake} stepTokenBalance={tokenAccountBalanceSTEP} xStepTokenBalance={tokenAccountBalanceXSTEP} usdStep={usdStepPrice} stepXStep={stepXStepPrice} onFormSubmit={handleFormSubmit} />
+      children: <Tab type={TabType.Unstake} stepTokenBalance={tokenAccountBalanceSTEP} xStepTokenBalance={tokenAccountBalanceXSTEP} usdStep={usdStepPrice} usdXStep={usdXStepPrice} stepXStep={stepXStepPrice} onFormSubmit={handleFormSubmit} />
     }
   ];
 
